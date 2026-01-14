@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Velho Oeste Online — CODv8</title>
+
+<style>
+body{
+  margin:0;
+  font-family: monospace;
+  background:#1e1e1e;
+  color:#eee;
+  display:flex;
+}
+aside{
+  width:240px;
+  background:#111;
+  padding:10px;
+  border-right:2px solid #333;
+}
+.avatar{
+  width:144px;
+  height:144px;
+  background:#333;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:10px;
+  border-radius:8px;
+  margin:auto;
+}
+.tabs button{
+  width:100%;
+  margin-bottom:5px;
+  background:#222;
+  border:1px solid #444;
+  color:#eee;
+  cursor:pointer;
+}
+.panel{display:none;}
+.panel.active{display:block;}
+main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+header{
+  background:#111;
+  padding:10px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+header button{
+  background:#222;
+  border:1px solid #444;
+  color:#eee;
+  padding:6px 10px;
+  cursor:pointer;
+}
+section{
+  padding:15px;
+  display:none;
+}
+section.active{display:block;}
+#log{
+  flex:1;
+  background:#000;
+  padding:10px;
+  overflow-y:auto;
+  border-top:2px solid #333;
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<aside>
+  <div class="avatar">
+    <img src="IMG/avatar.png" width="130" height="130">
+  </div>
+
+  <div class="tabs">
+    <button onclick="abrirPainel('status')">Status</button>
+    <button onclick="abrirPainel('equip')">Equip</button>
+  </div>
+
+  <div id="status" class="panel active">
+    <div>Nível: <span id="nivel"></span></div>
+    <div>XP: <span id="xp"></span>/<span id="xpProx"></span></div>
+    <div>Energia: <span id="energia"></span>%</div>
+    <div>Bebedeira: <span id="bebedeira"></span>%</div>
+    <div>Status: <span id="statusTxt"></span></div>
+    <div>💰 $<span id="dinheiro"></span></div>
+    <div>🏦 $<span id="bancoValor"></span></div>
+    <div id="prisao"></div>
+  </div>
+
+  <div id="equip" class="panel">
+    <div>🗡️ Arma: <span id="eqArma"></span></div>
+    <div>👢 Botas: <span id="eqBota"></span></div>
+    <div>🎩 Chapéu: <span id="eqChapeu"></span></div>
+  </div>
+</aside>
+
+<main>
+<header>
+  <button onclick="abrir('cidade')">Cidade</button>
+  <button onclick="abrir('saloon')">Saloon</button>
+  <button onclick="abrir('banco')">Banco</button>
+  <button onclick="abrir('xerife')">Xerife</button>
+  <button onclick="abrir('loja')">Loja</button>
+</header>
+
+<section id="cidade" class="active">
+  <button onclick="trabalhar()">Trabalhar</button>
+  <button onclick="roubar()">Roubar andarilho</button>
+  <button onclick="assaltar()">Assaltar diligência</button>
+</section>
+
+<section id="saloon">
+  <button onclick="beber()">🍺 Cerveja ($15)</button>
+  <button onclick="leite()">🥛 Leite ($5)</button>
+</section>
+
+<section id="banco">
+  <input id="valorBanco" type="number" placeholder="Valor">
+  <button onclick="depositar()">Depositar</button>
+  <button onclick="sacar()">Sacar</button>
+</section>
+
+<section id="xerife">
+  <button onclick="subornoPreso()">💰 Subornar prisão ($25)</button>
+</section>
+
+<section id="loja">
+  <button onclick="comprarEquip('arma')">🗡️ Arma ($50)</button>
+  <button onclick="comprarEquip('bota')">👢 Botas ($30)</button>
+  <button onclick="comprarEquip('chapeu')">🎩 Chapéu ($20)</button>
+</section>
+
+<div id="log"></div>
+</main>
+
+<script>
+/* ===== ESTADO ===== */
+let logs=[];
+let player={
+  nivel:1,xp:0,xpProx:20,
+  energia:100,bebedeira:0,
+  dinheiro:20,banco:0,
+  status:"Livre",presoAte:0,
+  equip:{arma:false,bota:false,chapeu:false}
+};
+
+const logDiv=document.getElementById("log");
+
+/* ===== UTIL ===== */
+function log(t){
+  logs.push(t);
+  if(logs.length>40)logs.shift();
+  logDiv.innerHTML=logs.join("<br>");
+  logDiv.scrollTop=logDiv.scrollHeight;
+}
+function semDinheiro(){ log("💸 Você não tem dinheiro suficiente."); }
+
+function abrir(id){
+  document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function abrirPainel(id){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+/* ===== LEVEL ===== */
+function ganharXP(v){
+  player.xp+=v;
+  while(player.xp>=player.xpProx){
+    player.xp-=player.xpProx;
+    player.nivel++;
+    player.xpProx=Math.floor(player.xpProx*1.5);
+    log("⭐ Subiu para o nível "+player.nivel+"!");
+  }
+}
+
+/* ===== HUD ===== */
+function atualizar(){
+  nivel.textContent=player.nivel;
+  xp.textContent=player.xp;
+  xpProx.textContent=player.xpProx;
+  energia.textContent=player.energia;
+  bebedeira.textContent=player.bebedeira;
+  dinheiro.textContent=player.dinheiro;
+  bancoValor.textContent=player.banco;
+  statusTxt.textContent=player.status;
+
+  eqArma.textContent=player.equip.arma?"Equipada":"Nenhuma";
+  eqBota.textContent=player.equip.bota?"Equipada":"Nenhuma";
+  eqChapeu.textContent=player.equip.chapeu?"Equipado":"Nenhum";
+
+  if(player.status==="Preso"){
+    let t=Math.max(0,Math.floor((player.presoAte-Date.now())/1000));
+    prisao.textContent="⏳ Preso: "+t+"s";
+    if(t<=0){
+      player.status="Livre";
+      prisao.textContent="";
+      log("🚪 Você foi solto.");
+    }
+  }else prisao.textContent="";
+}
+
+/* ===== AÇÕES ===== */
+function podeAgir(c=0){
+  if(player.status==="Preso"){log("🚔 Você está preso.");return false;}
+  if(player.energia<c){log("😴 Energia insuficiente.");return false;}
+  return true;
+}
+
+function trabalhar(){
+  if(!podeAgir(5))return;
+  player.energia-=5;
+  player.dinheiro+=5;
+  ganharXP(5);
+  log("🔨 Trabalhou.");
+}
+function roubar(){
+  if(!podeAgir(10))return;
+  player.energia-=10;
+  if(Math.random()<0.4){preso();return;}
+  player.dinheiro+=15;
+  ganharXP(10);
+  log("🕵️ Roubo bem sucedido.");
+}
+function assaltar(){
+  if(!podeAgir(20))return;
+  player.energia-=20;
+  if(Math.random()<0.7){preso();return;}
+  player.dinheiro+=50;
+  ganharXP(20);
+  log("🚚 Diligência assaltada!");
+}
+
+/* ===== SISTEMAS ===== */
+function preso(){
+  player.status="Preso";
+  player.presoAte=Date.now()+30000;
+  log("🚔 Você foi preso!");
+}
+function subornoPreso(){
+  if(player.status!=="Preso")return;
+  if(player.dinheiro<25){semDinheiro();return;}
+  player.dinheiro-=25;
+  player.status="Livre";
+  player.presoAte=0;
+  log("🔓 Suborno aceito.");
+}
+
+function beber(){
+  if(player.dinheiro<15){semDinheiro();return;}
+  player.dinheiro-=15;
+  player.energia=Math.min(100,player.energia+10);
+  player.bebedeira=Math.min(100,player.bebedeira+15);
+  log("🍺 Bebeu cerveja.");
+}
+function leite(){
+  if(player.dinheiro<5){semDinheiro();return;}
+  player.dinheiro-=5;
+  player.energia=Math.min(100,player.energia+15);
+  player.bebedeira=Math.max(0,player.bebedeira-15);
+  log("🥛 Bebeu leite.");
+}
+
+function depositar(){
+  let v=+valorBanco.value;
+  if(v>0 && player.dinheiro>=v){
+    player.dinheiro-=v;
+    player.banco+=v;
+    log("🏦 Depositou $"+v);
+  }
+}
+function sacar(){
+  let v=+valorBanco.value;
+  if(v>0 && player.banco>=v){
+    player.banco-=v;
+    player.dinheiro+=v;
+    log("🏦 Sacou $"+v);
+  }
+}
+function comprarEquip(i){
+  const p={arma:50,bota:30,chapeu:20};
+  if(player.equip[i]){log("⚠️ Item já equipado.");return;}
+  if(player.dinheiro<p[i]){semDinheiro();return;}
+  player.dinheiro-=p[i];
+  player.equip[i]=true;
+  log("🛠️ Comprou "+i+".");
+}
+
+/* ===== LOOP 1 — HUD & PRISÃO (1s) ===== */
+setInterval(atualizar,1000);
+
+/* ===== LOOP 2 — REGEN (5s) ===== */
+setInterval(()=>{
+  if(player.status==="Livre"){
+    player.energia=Math.min(100,player.energia+1);
+    player.bebedeira=Math.max(0,player.bebedeira-1);
+  }
+},5000);
+
+/* ===== INIT ===== */
+log("🤠 CODv8 carregado.");
+atualizar();
+</script>
+
+</body>
+</html>
