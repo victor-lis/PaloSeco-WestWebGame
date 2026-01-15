@@ -132,7 +132,7 @@ section button:hover{background:#3e2a1c;}
   flex:1;
   background:#0e0906;
   padding:10px;
-  overflow-y:auto;
+  overflow-x:auto;
   border-top:3px solid #5a3e2b;
   font-size:13px;
 }
@@ -207,11 +207,14 @@ section button:hover{background:#3e2a1c;}
 </section>
 
 <section id="xerife">
-  <button onclick="subornoPreso()">💰 Subornar prisão ($25)</button>
+  <button id="btnSuborno" onclick="subornoPreso()">
+    💰 Subornar prisão ($25)
+  </button>
 </section>
 
+
 <section id="loja">
-  <button onclick="comprarEquip('arma')">🗡️ Arma ($50)</button>
+  <button onclick="comprarEquip('arma')">🔫 Arma ($50)</button>
   <button onclick="comprarEquip('bota')">👢 Botas ($30)</button>
   <button onclick="comprarEquip('chapeu')">🎩 Chapéu ($20)</button>
 </section>
@@ -234,11 +237,11 @@ const logDiv=document.getElementById("log");
 
 /* ===== UTIL ===== */
 function log(t){
-  logs.push(t);
-  if(logs.length>40)logs.shift();
-  logDiv.innerHTML=logs.join("<br>");
-  logDiv.scrollTop=logDiv.scrollHeight;
+  logs.unshift(t);          // NOVA ENTRADA NO TOPO
+  if(logs.length > 40) logs.pop(); // remove a mais antiga
+  logDiv.innerHTML = logs.join("<br>");
 }
+
 function semDinheiro(){ log("💸 Você não tem dinheiro suficiente."); }
 
 function abrir(id){
@@ -300,14 +303,23 @@ function atualizar(){
     if(t<=0){
       player.status="Livre";
       prisao.textContent="";
-      log("🚪 Você foi solto.");
+      log("🔓 Você foi solto.");
     }
   }else prisao.textContent="";
+
+  // Atualiza valor do suborno no botão
+const btn = document.getElementById("btnSuborno");
+if(btn){
+  const custoBase = 25;
+  const custoFinal = custoBase * player.nivel;
+  btn.textContent = "💰 Subornar prisão ($"+custoFinal+")";
+}
+
 }
 
 /* ===== AÇÕES ===== */
 function podeAgir(c=0){
-  if(player.status==="Preso"){log("🚔 Você está preso.");return false;}
+  if(player.status==="Preso"){log("🔒 Você está preso.");return false;}
   if(player.energia<c){log("😴 Energia insuficiente.");return false;}
   return true;
 }
@@ -337,34 +349,67 @@ function assaltar(){
 }
 
 /* ===== SISTEMAS ===== */
+
+function estaPreso(){
+  if(player.status === "Preso"){
+    log("🔒 Você está preso. A única saída é subornar o xerife.");
+    return true;
+  }
+  return false;
+}
+
 function preso(){
   player.status="Preso";
-  player.presoAte=Date.now()+30000;
-  log("🚔 Você foi preso!");
+
+  const tempoBase = 30000; // 30 segundos
+  const tempoFinal = tempoBase * player.nivel;
+
+  player.presoAte = Date.now() + tempoFinal;
+
+  log("🔒 Você foi preso!");
+  log("⏳ Pena: " + (tempoFinal/1000) + " segundos (nível "+player.nivel+")");
 }
+
 function subornoPreso(){
-  if(player.status!=="Preso")return;
-  if(player.dinheiro<25){semDinheiro();return;}
-  player.dinheiro-=25;
-  player.status="Livre";
-  player.presoAte=0;
-  log("🔓 Suborno aceito.");
+  if(player.status!=="Preso") return;
+
+  const custoBase = 25;
+  const custoFinal = custoBase * player.nivel;
+
+  if(player.dinheiro < custoFinal){
+    log("💰 O xerife cospe no chão.");
+    log("❌ Suborno recusado. Precisa de $"+custoFinal);
+    return;
+  }
+
+  player.dinheiro -= custoFinal;
+  player.status = "Livre";
+  player.presoAte = 0;
+
+  log("🤝 Suborno aceito.");
+  log("💸 Pagou $"+custoFinal+" ao xerife.");
 }
+
 function beber(){
+  if(estaPreso()) return;
   if(player.dinheiro<15){semDinheiro();return;}
   player.dinheiro-=15;
   player.energia=Math.min(100,player.energia+10);
   player.bebedeira=Math.min(100,player.bebedeira+15);
   log("🍺 Bebeu cerveja.");
 }
+
 function leite(){
+  if(estaPreso()) return;
   if(player.dinheiro<5){semDinheiro();return;}
   player.dinheiro-=5;
   player.energia=Math.min(100,player.energia+15);
   player.bebedeira=Math.max(0,player.bebedeira-15);
   log("🥛 Bebeu leite.");
 }
+
 function depositar(){
+  if(estaPreso()) return;
   let v=+valorBanco.value;
   if(v>0 && player.dinheiro>=v){
     player.dinheiro-=v;
@@ -372,7 +417,9 @@ function depositar(){
     log("🏦 Depositou $"+v);
   }
 }
+
 function sacar(){
+  if(estaPreso()) return;
   let v=+valorBanco.value;
   if(v>0 && player.banco>=v){
     player.banco-=v;
@@ -380,7 +427,9 @@ function sacar(){
     log("🏦 Sacou $"+v);
   }
 }
+
 function comprarEquip(i){
+  if(estaPreso()) return;
   const p={arma:50,bota:30,chapeu:20};
   if(player.equip[i]){log("⚠️ Item já equipado.");return;}
   if(player.dinheiro<p[i]){semDinheiro();return;}
@@ -388,6 +437,7 @@ function comprarEquip(i){
   player.equip[i]=true;
   log("🛠️ Comprou "+i+".");
 }
+
 
 /* ===== LOOPS ===== */
 setInterval(atualizar,1000);
