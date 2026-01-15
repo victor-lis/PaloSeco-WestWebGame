@@ -26,10 +26,20 @@ aside{
   display:flex;
   align-items:center;
   justify-content:center;
-  margin-bottom:12px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 50;
   border-radius:10px;
-  margin:auto;
   border:2px solid #7a5236;
+}
+
+/* ===== NOME PERSONAGEM ===== */
+h3{
+  text-align:center;
+  margin-top:0;
+  margin-bottom:30px;
 }
 
 /* ===== TABS ===== */
@@ -71,6 +81,12 @@ main{
   display:flex;
   flex-direction:column;
 }
+h1{
+  margin:10px;
+  font-size:60px;
+  text-align:center;
+  color:#f0d9a6;
+}
 header{
   background:#1c120b;
   padding:10px;
@@ -78,6 +94,8 @@ header{
   gap:8px;
   flex-wrap:wrap;
   border-bottom:3px solid #5a3e2b;
+  border-top: 3px solid #5a3e2b;
+  
 }
 header button{
   background:#3a2618;
@@ -120,7 +138,7 @@ section button:hover{background:#3e2a1c;}
   <div class="avatar">
     <img src="IMG/avatar.png" width="130">
   </div>
-
+  <h3>⭐Belchior Bill⭐</h3>
   <div class="tabs">
     <button onclick="abrirPainel('status')">Status</button>
     <button onclick="abrirPainel('equip')">Equip</button>
@@ -152,6 +170,7 @@ section button:hover{background:#3e2a1c;}
 </aside>
 
 <main>
+  <h1>PALOSECO</h1>
 <header>
   <button onclick="abrir('cidade')">Cidade</button>
   <button onclick="abrir('saloon')">Saloon</button>
