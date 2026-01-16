@@ -167,7 +167,7 @@ section button:hover{background:#3e2a1c;}
 
 <aside>
   <div class="avatar">
-    <img src="IMG/avatar.png" width="130">
+    <img id="avatarImg" src="IMG/avatar.png" width="130">
   </div>
 
   <h3>⭐Belchior Bill⭐</h3>
@@ -208,22 +208,25 @@ section button:hover{background:#3e2a1c;}
 
   <h1>PALOSECO</h1>
 <header>
-  <button onclick="abrir('cidade')">Cidade</button>
+  <button onclick="abrir('trabalhos')">Trabalhos</button>
   <button onclick="abrir('saloon')">Saloon</button>
   <button onclick="abrir('banco')">Banco</button>
   <button onclick="abrir('xerife')">Xerife</button>
   <button onclick="abrir('loja')">Loja</button>
 </header>
 
-<section id="cidade" class="active">
-  <button onclick="trabalhar()">Trabalhar</button>
+<section id="trabalhos" class="active">
+  <button onclick="trabalharestabulos()">Trabalhar nos estabulos</button>
   <button onclick="roubar()">Roubar andarilho</button>
-  <button onclick="assaltar()">Assaltar diligência</button>
+  <button onclick="assaltardiligencia()">Assaltar diligência</button>
+  <button onclick="assaltartrem()">Assaltar trem</button>
 </section>
 
 <section id="saloon">
   <button onclick="beber()">🍺 Cerveja ($15)</button>
   <button onclick="leite()">🥛 Leite ($5)</button>
+  <button onclick="cafe()">☕ Café preto ($20)</button>
+
 </section>
 
 <section id="banco">
@@ -271,6 +274,11 @@ function log(t){
     .join("");
 }
 
+function random(min, max){
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
 
 function semDinheiro(){ log("💸 Você não tem dinheiro suficiente."); }
 
@@ -285,16 +293,25 @@ function abrirPainel(id){
 
 /* ===== LEVEL ===== */
 function ganharXP(v){
-  player.xp+=v;
-  while(player.xp>=player.xpProx){
-    player.xp-=player.xpProx;
-    player.nivel++;
-    player.xpProx=Math.floor(player.xpProx*1.5);
-    log("⭐ Subiu para o nível "+player.nivel+"!");
-    log("🏅 Novo título: "+obterTitulo());
+  player.xp += v;
 
+  while(player.xp >= player.xpProx){
+    player.xp -= player.xpProx;
+
+    const tituloAnterior = obterTitulo();
+
+    player.nivel++;
+    player.xpProx = Math.floor(player.xpProx * 1.5);
+
+    log("⭐ Subiu para o nível " + player.nivel + "!");
+
+    const novoTitulo = obterTitulo();
+    if(novoTitulo !== tituloAnterior){
+      log("🏅 Novo título: " + novoTitulo);
+    }
   }
 }
+
 
 /* ===== TÍTULO ===== */
 function obterTitulo(){
@@ -345,6 +362,15 @@ if(btn){
   btn.textContent = "💰 Subornar prisão ($"+custoFinal+")";
 }
 
+const avatar = document.getElementById("avatarImg");
+
+if(player.status === "Preso"){
+  avatar.src = "IMG/avatar-preso.png";
+}else{
+  avatar.src = "IMG/avatar.png";
+}
+
+
 }
 
 /* ===== AÇÕES ===== */
@@ -354,28 +380,74 @@ function podeAgir(c=0){
   return true;
 }
 
-function trabalhar(){
-  if(!podeAgir(5))return;
-  player.energia-=5;
-  player.dinheiro+=5;
+function trabalharestabulos(){
+  if(!podeAgir(5)) return;
+
+  player.energia -= 5;
+  if(falhaPorBebedeira()){
+    return;
+  }
+  player.dinheiro += 5;
   ganharXP(5);
-  log("🔨 Trabalhou.");
+  log("🔨 Trabalhou nos estábulos.");
 }
+
 function roubar(){
-  if(!podeAgir(10))return;
-  player.energia-=10;
-  if(Math.random()<0.4){preso();return;}
-  player.dinheiro+=15;
+  if(!podeAgir(10)) return;
+  player.energia -= 10;
+  let chancePrisao = 0.4;
+  // Bebedeira alta aumenta risco
+  if(player.bebedeira > 50) chancePrisao += 0.2;
+  if(Math.random() < chancePrisao){
+    preso();
+    return;
+  }
+  const ganho = random(3, 15);
+  player.dinheiro += ganho;
   ganharXP(10);
-  log("🕵️ Roubo bem sucedido.");
+  log("🕵️ Roubou um andarilho e conseguiu $" + ganho + ".");
 }
-function assaltar(){
-  if(!podeAgir(20))return;
-  player.energia-=20;
-  if(Math.random()<0.7){preso();return;}
-  player.dinheiro+=50;
+
+
+
+function assaltardiligencia(){
+  if(!podeAgir(20)) return;
+  player.energia -= 20;
+  let chancePrisao = 0.7;
+  if(player.bebedeira > 50) chancePrisao += 0.2;
+  if(Math.random() < chancePrisao){
+    preso();
+    return;
+  }
+  const ganho = random(20, 60);
+  player.dinheiro += ganho;
   ganharXP(20);
-  log("🚚 Diligência assaltada!");
+  log("🚚 Diligência assaltada! Lucro: $" + ganho + ".");
+}
+
+
+function assaltartrem(){
+  if(!podeAgir(30)) return;
+  player.energia -= 30;
+  let chancePrisao = 0.9;
+  if(player.bebedeira > 50) chancePrisao += 0.1;
+  if(Math.random() < chancePrisao){
+    preso();
+    return;
+  }
+  const ganho = random(80, 250);
+  player.dinheiro += ganho;
+  ganharXP(40);
+  log("🚂 Trem assaltado! Botim: $" + ganho + "!");
+}
+
+
+function falhaPorBebedeira(chance = 0.4){
+  if(player.bebedeira > 50 && Math.random() < chance){
+    log("💤 Você dormiu no trabalho por conta da bebedeira.");
+    return true;
+  }
+  return false;
 }
 
 /* ===== SISTEMAS ===== */
@@ -389,16 +461,17 @@ function estaPreso(){
 }
 
 function preso(){
-  player.status="Preso";
-
-  const tempoBase = 30000; // 30 segundos
+  player.status = "Preso";
+  const tempoBase = 30000;
   const tempoFinal = tempoBase * player.nivel;
-
   player.presoAte = Date.now() + tempoFinal;
-
-  log("🔒 Você foi preso!");
+  const dinheiroPerdido = player.dinheiro;
+  player.dinheiro = 0;
+  log("🚔 Você foi preso!");
+  log("💸 O xerife confisca $" + dinheiroPerdido + ".");
   log("⏳ Pena: " + (tempoFinal/1000) + " segundos (nível "+player.nivel+")");
 }
+
 
 function subornoPreso(){
   if(player.status!=="Preso") return;
@@ -433,10 +506,33 @@ function leite(){
   if(estaPreso()) return;
   if(player.dinheiro<5){semDinheiro();return;}
   player.dinheiro-=5;
-  player.energia=Math.min(100,player.energia+15);
-  player.bebedeira=Math.max(0,player.bebedeira-15);
+  player.energia=Math.min(100,player.energia+5);
+  player.bebedeira=Math.max(0,player.bebedeira-5);
   log("🥛 Bebeu leite.");
 }
+
+function cafe(){
+  if(estaPreso()) return;
+  if(player.dinheiro < 10){ semDinheiro(); return; }
+
+  player.dinheiro -= 10;
+
+  let reducaoBebedeira = 20;
+  let ganhoEnergia = 5;
+
+  // Muito bêbado? Café perde efeito
+  if(player.bebedeira > 80){
+    reducaoBebedeira = 10;
+    ganhoEnergia = 2;
+    log("☕ O café mal fez efeito. Você está acabado.");
+  } else {
+    log("☕ Café preto desceu rasgando a garganta.");
+  }
+
+  player.bebedeira = Math.max(0, player.bebedeira - reducaoBebedeira);
+  player.energia = Math.min(100, player.energia + ganhoEnergia);
+}
+
 
 function depositar(){
   if(estaPreso()) return;
@@ -449,14 +545,18 @@ function depositar(){
 }
 
 function sacar(){
-  if(estaPreso()) return;
-  let v=+valorBanco.value;
-  if(v>0 && player.banco>=v){
-    player.banco-=v;
-    player.dinheiro+=v;
-    log("🏦 Sacou $"+v);
+  let v = +valorBanco.value;
+  if(v > 0 && player.banco >= v){
+    player.banco -= v;
+    player.dinheiro += v;
+    if(player.status === "Preso"){
+      log("🏦 Sacou $" + v + " da conta mesmo estando preso.");
+    }else{
+      log("🏦 Sacou $" + v + ".");
+    }
   }
 }
+
 
 function comprarEquip(i){
   if(estaPreso()) return;
@@ -467,6 +567,15 @@ function comprarEquip(i){
   player.equip[i]=true;
   log("🛠️ Comprou "+i+".");
 }
+
+function modificadorPrisao(){
+  if(player.bebedeira <= 50) return 0;
+
+  // quanto mais bêbado, pior
+  // 51% → +5% | 100% → +30%
+  return Math.min(0.3, (player.bebedeira - 50) / 50 * 0.3);
+}
+
 
 
 /* ===== LOOPS ===== */
