@@ -131,13 +131,26 @@ section button{
 section button:hover{background:#3e2a1c;}
 
 #log{
-  flex:1;
+  height:600px;            /* ALTURA FIXA */
   background:#0e0906;
   padding:10px;
-  overflow-x:auto;
+  overflow-y:auto;         /* SCROLL VERTICAL */
+  overflow-x:hidden;
   border-top:3px solid #5a3e2b;
   font-size:13px;
 }
+
+#log::-webkit-scrollbar{
+  width:10px;
+}
+#log::-webkit-scrollbar-thumb{
+  background:#6b4a33;
+}
+#log::-webkit-scrollbar-track{
+  background:#120b06;
+}
+
+
 
 /* ===== LOG UX ===== */
 .log-line{
@@ -158,6 +171,16 @@ section button:hover{background:#3e2a1c;}
 
 .log-line:nth-child(3){
   opacity:0.55;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  text-align: center;
+  padding: 10px;
+  background-color: #1a120b;
+  color: #f5e6c8;
+  border-top: 3px solid #5a3e2b;
+  font-size: 12px;
 }
 
 </style>
@@ -249,6 +272,8 @@ section button:hover{background:#3e2a1c;}
 </section>
 
 <div id="log"></div>
+
+<footer> © 2026 Palo Seco - Jogo de gerenciamento Velho Oeste em desenvolvimento por Dan Leonardi </footer>
 </main>
 
 <script>
@@ -597,7 +622,7 @@ log("");
 log("🌵 Bem vindo.");
 log("");
 atualizar();
-</script>
 
+</script>
 </body>
 </html>
